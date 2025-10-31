@@ -61,7 +61,6 @@ class UserService {
     await _dio.delete('/users/deleteUser/$id');
   }
 
-  // Upload image to Cloudinary
   Future<String?> uploadToCloudinary(XFile file) async {
     try {
       FormData formData;
