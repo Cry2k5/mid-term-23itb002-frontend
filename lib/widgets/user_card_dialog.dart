@@ -9,7 +9,12 @@ class UserCardDialog extends StatefulWidget {
   final UserService service;
   final VoidCallback onRefresh;
 
-  const UserCardDialog({super.key, this.user, required this.service, required this.onRefresh});
+  const UserCardDialog({
+    super.key,
+    this.user,
+    required this.service,
+    required this.onRefresh,
+  });
 
   @override
   State<UserCardDialog> createState() => _UserCardDialogState();
@@ -21,6 +26,7 @@ class _UserCardDialogState extends State<UserCardDialog> {
   final _passwordController = TextEditingController();
   XFile? _pickedFile;
   bool _loading = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -43,10 +49,12 @@ class _UserCardDialogState extends State<UserCardDialog> {
     try {
       String? uploadedImageUrl;
       if (_pickedFile != null) {
-        uploadedImageUrl = await widget.service.uploadToCloudinary(_pickedFile!);
+        uploadedImageUrl =
+        await widget.service.uploadToCloudinary(_pickedFile!);
       }
 
       if (widget.user == null) {
+        // Thêm user mới
         await widget.service.addUser(
           _usernameController.text,
           _emailController.text,
@@ -54,18 +62,23 @@ class _UserCardDialogState extends State<UserCardDialog> {
           uploadedImageUrl,
         );
       } else {
+        // Cập nhật user
         await widget.service.updateUser(
           widget.user!.id,
           _usernameController.text,
           _emailController.text,
           uploadedImageUrl,
+          password: _passwordController.text.isNotEmpty
+              ? _passwordController.text
+              : null,
         );
       }
 
       widget.onRefresh();
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi lưu user: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Lỗi lưu user: $e')));
     } finally {
       setState(() => _loading = false);
     }
@@ -78,8 +91,12 @@ class _UserCardDialogState extends State<UserCardDialog> {
         title: const Text('Xác nhận xóa'),
         content: const Text('Bạn có chắc muốn xóa user này không?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Hủy')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Xóa')),
         ],
       ),
     );
@@ -91,7 +108,8 @@ class _UserCardDialogState extends State<UserCardDialog> {
         widget.onRefresh();
         Navigator.pop(context);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi xóa user: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Lỗi xóa user: $e')));
       } finally {
         setState(() => _loading = false);
       }
@@ -104,12 +122,15 @@ class _UserCardDialogState extends State<UserCardDialog> {
       insetPadding: const EdgeInsets.all(16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.9, // chiếm 90% màn hình
+        width: MediaQuery.of(context).size.width * 0.9,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black26, blurRadius: 20, offset: Offset(0, 10))
+          ],
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -117,46 +138,68 @@ class _UserCardDialogState extends State<UserCardDialog> {
             children: [
               Text(
                 widget.user == null ? 'Thêm User Mới' : 'Cập Nhật User',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style:
+                const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
+              // Username
               TextFormField(
                 controller: _usernameController,
                 decoration: InputDecoration(
                   labelText: 'Username',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
               const SizedBox(height: 16),
+              // Email
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'Email',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
-              if (widget.user == null)
-                const SizedBox(height: 16),
-              if (widget.user == null)
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              const SizedBox(height: 16),
+              // Password
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: widget.user == null
+                      ? 'Password'
+                      : 'Mật khẩu mới (tùy chọn)',
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword
+                        ? Icons.visibility_off
+                        : Icons.visibility),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
                 ),
+              ),
               const SizedBox(height: 16),
+              // Chọn ảnh
               ElevatedButton.icon(
                 onPressed: pickImage,
                 icon: const Icon(Icons.image),
                 label: const Text('Chọn ảnh'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               if (_pickedFile != null) ...[
@@ -164,6 +207,7 @@ class _UserCardDialogState extends State<UserCardDialog> {
                 Text(_pickedFile!.name, style: const TextStyle(fontSize: 14)),
               ],
               const SizedBox(height: 24),
+              // Buttons: Xóa + Lưu
               Row(
                 children: [
                   if (widget.user != null)
@@ -175,7 +219,9 @@ class _UserCardDialogState extends State<UserCardDialog> {
                           side: const BorderSide(color: Colors.red),
                           minimumSize: const Size(double.infinity, 50),
                         ),
-                        child: _loading ? const CircularProgressIndicator() : const Text('Xóa'),
+                        child: _loading
+                            ? const CircularProgressIndicator()
+                            : const Text('Xóa'),
                       ),
                     ),
                   if (widget.user != null) const SizedBox(width: 12),
@@ -184,14 +230,18 @@ class _UserCardDialogState extends State<UserCardDialog> {
                       onPressed: _loading ? null : saveUser,
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: _loading ? const CircularProgressIndicator() : const Text('Lưu'),
+                      child: _loading
+                          ? const CircularProgressIndicator()
+                          : const Text('Lưu'),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
+              // Cancel
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Hủy'),
@@ -202,5 +252,4 @@ class _UserCardDialogState extends State<UserCardDialog> {
       ),
     );
   }
-
 }
