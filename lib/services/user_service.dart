@@ -39,13 +39,21 @@ class UserService {
     });
   }
 
-  // Update user
-  Future<void> updateUser(String id, String username, String email, String? imageUrl) async {
-    await _dio.put('/users/updateUser/$id', data: {
+  Future<void> updateUser(
+      String id,
+      String username,
+      String email,
+      String? imageUrl, {
+        String? password, // thêm tùy chọn password
+      }) async {
+    final data = {
       'username': username,
       'email': email,
       if (imageUrl != null) 'image': imageUrl,
-    });
+      if (password != null && password.isNotEmpty) 'password': password, // gửi password nếu có
+    };
+
+    await _dio.put('/users/updateUser/$id', data: data);
   }
 
   // Delete user
